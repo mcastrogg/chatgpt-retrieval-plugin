@@ -1,6 +1,7 @@
 import os
 from typing import Any, Dict, List, Optional
 import pinecone
+from pinecome import ServerlessSpec
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 import asyncio
 from loguru import logger
@@ -50,6 +51,10 @@ class PineconeDataStore(DataStore):
                     PINECONE_INDEX,
                     dimension=EMBEDDING_DIMENSION,
                     metadata_config={"indexed": fields_to_index},
+                    spec=ServerlessSpec(
+                        cloud="aws",
+                        region="us-east-1"
+                    )
                 )
                 self.index = pinecone.Index(PINECONE_INDEX)
                 logger.info(f"Index {PINECONE_INDEX} created successfully")
