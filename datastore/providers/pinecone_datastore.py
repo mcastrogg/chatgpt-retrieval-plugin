@@ -1,7 +1,7 @@
 import os
 from typing import Any, Dict, List, Optional
 import pinecone
-from pinecome import ServerlessSpec
+from pinecone import ServerlessSpec
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 import asyncio
 from loguru import logger
