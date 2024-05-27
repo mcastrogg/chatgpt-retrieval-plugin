@@ -1,7 +1,6 @@
 import os
 from typing import Any, Dict, List, Optional
-import pinecone
-from pinecone import ServerlessSpec
+from pinecone import ServerlessSpec, Pinecone
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 import asyncio
 from loguru import logger
@@ -27,7 +26,7 @@ assert PINECONE_ENVIRONMENT is not None
 assert PINECONE_INDEX is not None
 
 # Initialize Pinecone with the API key and environment
-pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)
+pc = Pinecone(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)
 
 # Set the batch size for upserting vectors to Pinecone
 UPSERT_BATCH_SIZE = 100
@@ -38,7 +37,9 @@ EMBEDDING_DIMENSION = int(os.environ.get("EMBEDDING_DIMENSION", 256))
 class PineconeDataStore(DataStore):
     def __init__(self):
         # Check if the index name is specified and exists in Pinecone
-        if PINECONE_INDEX and PINECONE_INDEX not in pinecone.list_indexes():
+        print(f"pinecone: {PINECONE_INDEX}")
+        existing_indexes = [x["name"] for x in pc.list_indexes().get("indexes", [])]
+        if PINECONE_INDEX and PINECONE_INDEX not in existing_indexes:
             # Get all fields in the metadata object in a list
             fields_to_index = list(DocumentChunkMetadata.__fields__.keys())
 
@@ -47,25 +48,24 @@ class PineconeDataStore(DataStore):
                 logger.info(
                     f"Creating index {PINECONE_INDEX} with metadata config {fields_to_index}"
                 )
-                pinecone.create_index(
+                pc.create_index(
                     PINECONE_INDEX,
                     dimension=EMBEDDING_DIMENSION,
-                    metadata_config={"indexed": fields_to_index},
                     spec=ServerlessSpec(
                         cloud="aws",
                         region="us-east-1"
                     )
                 )
-                self.index = pinecone.Index(PINECONE_INDEX)
+                self.index = pc.Index(PINECONE_INDEX)
                 logger.info(f"Index {PINECONE_INDEX} created successfully")
             except Exception as e:
                 logger.error(f"Error creating index {PINECONE_INDEX}: {e}")
                 raise e
-        elif PINECONE_INDEX and PINECONE_INDEX in pinecone.list_indexes():
+        elif PINECONE_INDEX and PINECONE_INDEX in pc.list_indexes():
             # Connect to an existing index with the specified name
             try:
                 logger.info(f"Connecting to existing index {PINECONE_INDEX}")
-                self.index = pinecone.Index(PINECONE_INDEX)
+                self.index = pc.Index(PINECONE_INDEX)
                 logger.info(f"Connected to index {PINECONE_INDEX} successfully")
             except Exception as e:
                 logger.error(f"Error connecting to index {PINECONE_INDEX}: {e}")
