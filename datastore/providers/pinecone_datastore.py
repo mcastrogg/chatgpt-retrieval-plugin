@@ -61,9 +61,11 @@ class PineconeDataStore(DataStore):
             except Exception as e:
                 logger.error(f"Error creating index {PINECONE_INDEX}: {e}")
                 raise e
-        elif PINECONE_INDEX and PINECONE_INDEX in pc.list_indexes():
+        elif PINECONE_INDEX and PINECONE_INDEX in existing_indexes:
             # Connect to an existing index with the specified name
             try:
+                print(pc)
+                print("foudn index: ", pc.Index(PINECONE_INDEX))
                 logger.info(f"Connecting to existing index {PINECONE_INDEX}")
                 self.index = pc.Index(PINECONE_INDEX)
                 logger.info(f"Connected to index {PINECONE_INDEX} successfully")
@@ -96,6 +98,8 @@ class PineconeDataStore(DataStore):
                 vector = (chunk.id, chunk.embedding, pinecone_metadata)
                 vectors.append(vector)
 
+        print("Example Vector: ", vectors[0])
+
         # Split the vectors list into batches of the specified size
         batches = [
             vectors[i : i + UPSERT_BATCH_SIZE]
@@ -105,7 +109,8 @@ class PineconeDataStore(DataStore):
         for batch in batches:
             try:
                 logger.info(f"Upserting batch of size {len(batch)}")
-                self.index.upsert(vectors=batch)
+                print("HERE ATTEMPTING NAMESPACE STUFF")
+                self.index.upsert(vectors=batch, namespace="ns1")
                 logger.info(f"Upserted batch successfully")
             except Exception as e:
                 logger.error(f"Error upserting batch: {e}")
