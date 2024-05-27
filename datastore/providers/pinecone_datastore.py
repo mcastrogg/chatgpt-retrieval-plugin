@@ -133,6 +133,7 @@ class PineconeDataStore(DataStore):
 
             # Convert the metadata filter object to a dict with pinecone filter expressions
             pinecone_filter = self._get_pinecone_filter(query.filter)
+            print(f"FILTER: ", pinecone_filter)
 
             try:
                 # Query the index with the query embedding, filter, and top_k
@@ -140,9 +141,10 @@ class PineconeDataStore(DataStore):
                     namespace="ns1",
                     top_k=query.top_k,
                     vector=query.embedding,
-                    filter=pinecone_filter,
+                    # filter=pinecone_filter,
                     include_metadata=True,
                 )
+                print("QUERY RESPONSE: ", query_response)
             except Exception as e:
                 logger.error(f"Error querying index: {e}")
                 raise e
@@ -243,7 +245,9 @@ class PineconeDataStore(DataStore):
         # For start_date and end_date, uses the $gte and $lte operators respectively
         # For other fields, uses the $eq operator
         for field, value in filter.dict().items():
-            if value is not None:
+            print("field:", field, "value:", value)
+            if value is not None and value != "":
+                print("f:", field, "v:", value)
                 if field == "start_date":
                     pinecone_filter["created_at"] = pinecone_filter.get(
                         "created_at", {}
